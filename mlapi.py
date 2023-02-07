@@ -1,9 +1,23 @@
 from fastapi import FastAPI
+from pydantic import BaseModel 
+import pickle 
+import pandas as pd 
 
 
 app = FastAPI() 
 
+class ScoringItem(BaseModel):
+    YearsAtCompany: int
+    EmployeeSatisfaction: float 
+    Position: str  
+    Salary: int 
 
-@app.get('/')
-async def scoring_endpoint():
-    return  {'hello': 'world'} 
+with open('rfmodel.pkl', 'rb') as f:
+    model  = pickle.load(f)
+
+
+@app.post('/')
+async def scoring_endpoint(item: ScoringItem):
+    df = pd.DataFrame([item.dict().values()], columns=item.dict().keys())
+    yhat = model.predict(df)
+    return  {"prediction":int(yhat)}
